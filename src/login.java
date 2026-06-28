@@ -6,13 +6,13 @@ import java.awt.event.*;
 
 public class login extends javax.swing.JFrame {
 
-    public static String txt;
+    public static String txt;//menyimpan username yang login
 
     public login() {
         initComponents();
         this.setLocationRelativeTo(null);
         this.setTitle("Login - Aplikasi Toko");
-        txt_username.requestFocus();
+        txt_username.requestFocus();//untuk mengarahkan kursor supaya langsung ke field username
     }
 
     private void kosongkan_form() {
@@ -88,7 +88,7 @@ public class login extends javax.swing.JFrame {
     private javax.swing.JPasswordField txt_password;
     private javax.swing.JTextField txt_username;
 
-    // ========== INIT COMPONENTS (UI MODERN) ==========
+    // ========== KOMPONEN GUI ==========
     private void initComponents() {
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setUndecorated(true);
@@ -109,7 +109,7 @@ public class login extends javax.swing.JFrame {
         JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 5));
         rightPanel.setBackground(new Color(15, 15, 35));
 
-        JButton closeBtn = new JButton("✕");
+        JButton closeBtn = new JButton("X");
         closeBtn.setFont(new Font("Segoe UI", Font.BOLD, 16));
         closeBtn.setForeground(Color.WHITE);
         closeBtn.setBackground(new Color(200, 50, 50));
@@ -224,7 +224,7 @@ public class login extends javax.swing.JFrame {
         mainPanel.add(jLabel_register, c);
 
         // ===== EXIT LINK =====
-        jLabel_exit = new JLabel("❌ Exit");
+        jLabel_exit = new JLabel("Exit");
         jLabel_exit.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         jLabel_exit.setForeground(new Color(200, 80, 80));
         jLabel_exit.setCursor(new Cursor(Cursor.HAND_CURSOR));

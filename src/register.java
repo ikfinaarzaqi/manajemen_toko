@@ -240,7 +240,7 @@ public class register extends javax.swing.JFrame {
         JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 5));
         rightPanel.setBackground(new Color(15, 15, 35));
 
-        JButton closeBtn = new JButton("✕");
+        JButton closeBtn = new JButton("X");
         closeBtn.setFont(new Font("Segoe UI", Font.BOLD, 16));
         closeBtn.setForeground(Color.WHITE);
         closeBtn.setBackground(new Color(200, 50, 50));

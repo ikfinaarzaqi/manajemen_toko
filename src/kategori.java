@@ -207,20 +207,22 @@ public class kategori extends javax.swing.JFrame {
         java.awt.EventQueue.invokeLater(() -> new kategori().setVisible(true));
     }
 
-    // ========== VARIABLES ==========
+    // VARIABLES
     private javax.swing.JButton btn_back, btn_cancel, btn_delete, btn_refresh, btn_submit, btn_update;
     private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JScrollPane scrollDeskripsi; // Menggunakan JScrollPane untuk area deskripsi
     private javax.swing.JTable tabel_kategori;
-    private javax.swing.JTextField txt_deskripsi, txt_idKategori, txt_namaKategori;
+    private javax.swing.JTextField txt_idKategori, txt_namaKategori;
+    private javax.swing.JTextArea txt_deskripsi; // Diubah menjadi JTextArea agar multiline
 
-    // ========== INIT COMPONENTS ==========
+    // INIT COMPONENTS
     private void initComponents() {
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setUndecorated(true);
-        setSize(850, 620);
+        setSize(850, 640); // Ditambah sedikit tingginya agar lebih lega
         setLocationRelativeTo(null);
 
-        // ===== TITLE BAR =====
+        // TITLE BAR
         JPanel titleBar = new JPanel(new BorderLayout());
         titleBar.setBackground(new Color(15, 15, 35));
         titleBar.setPreferredSize(new Dimension(850, 45));
@@ -234,7 +236,7 @@ public class kategori extends javax.swing.JFrame {
         JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 5));
         rightPanel.setBackground(new Color(15, 15, 35));
 
-        JButton closeBtn = new JButton("✕");
+        JButton closeBtn = new JButton("X");
         closeBtn.setFont(new Font("Segoe UI", Font.BOLD, 16));
         closeBtn.setForeground(Color.WHITE);
         closeBtn.setBackground(new Color(200, 50, 50));
@@ -246,81 +248,92 @@ public class kategori extends javax.swing.JFrame {
 
         titleBar.add(rightPanel, BorderLayout.EAST);
 
-        // ===== MAIN PANEL =====
+        // MAIN PANEL
         JPanel mainPanel = new JPanel(new GridBagLayout());
         mainPanel.setBackground(new Color(10, 10, 30));
         GridBagConstraints c = new GridBagConstraints();
-        c.insets = new Insets(8, 10, 8, 10);
+        c.insets = new Insets(10, 10, 10, 10);
 
-        // ===== HEADER =====
+        // HEADER
         JLabel header = new JLabel("Daftar Data Kategori");
         header.setFont(new Font("Segoe UI", Font.BOLD, 22));
         header.setForeground(Color.WHITE);
         c.gridx = 0; c.gridy = 0;
-        c.gridwidth = 4;
+        c.gridwidth = 2;
+        c.anchor = GridBagConstraints.CENTER;
         mainPanel.add(header, c);
-        c.gridwidth = 1;
 
-        // ===== ID KATEGORI =====
+        // ID KATEGORI
         c.gridx = 0; c.gridy = 1;
-        JLabel lblId = new JLabel("ID Kategori :");
+        c.gridwidth = 1;
+        c.anchor = GridBagConstraints.EAST; // Label ditarik ke kanan mendekati teks field
+        JLabel lblId = new JLabel("ID Kategori :", SwingConstants.RIGHT);
         lblId.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         lblId.setForeground(new Color(200, 200, 230));
+        lblId.setPreferredSize(new Dimension(120, 32));
         mainPanel.add(lblId, c);
 
-        txt_idKategori = new JTextField(15);
+        txt_idKategori = new JTextField();
         txt_idKategori.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         txt_idKategori.setBackground(Color.WHITE);
         txt_idKategori.setForeground(Color.BLACK);
-        txt_idKategori.setPreferredSize(new Dimension(350, 32));
+        txt_idKategori.setPreferredSize(new Dimension(150, 32)); // Ukuran ID diperpendek agar proporsional
+        txt_idKategori.setBorder(BorderFactory.createCompoundBorder(txt_idKategori.getBorder(), BorderFactory.createEmptyBorder(2, 6, 2, 6)));
         txt_idKategori.setEnabled(false);
         c.gridx = 1; c.gridy = 1;
-        c.gridwidth = 3;
+        c.anchor = GridBagConstraints.WEST;
         mainPanel.add(txt_idKategori, c);
-        c.gridwidth = 1;
 
-        // ===== NAMA KATEGORI =====
+        // NAMA KATEGORI
         c.gridx = 0; c.gridy = 2;
-        JLabel lblNama = new JLabel("Nama Kategori :");
+        c.anchor = GridBagConstraints.EAST;
+        JLabel lblNama = new JLabel("Nama Kategori :", SwingConstants.RIGHT);
         lblNama.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         lblNama.setForeground(new Color(200, 200, 230));
+        lblNama.setPreferredSize(new Dimension(120, 32));
         mainPanel.add(lblNama, c);
 
-        txt_namaKategori = new JTextField(20);
+        txt_namaKategori = new JTextField();
         txt_namaKategori.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         txt_namaKategori.setBackground(Color.WHITE);
         txt_namaKategori.setForeground(Color.BLACK);
         txt_namaKategori.setPreferredSize(new Dimension(350, 32));
+        txt_namaKategori.setBorder(BorderFactory.createCompoundBorder(txt_namaKategori.getBorder(), BorderFactory.createEmptyBorder(2, 6, 2, 6)));
         c.gridx = 1; c.gridy = 2;
-        c.gridwidth = 3;
+        c.anchor = GridBagConstraints.WEST;
         mainPanel.add(txt_namaKategori, c);
-        c.gridwidth = 1;
 
-        // ===== DESKRIPSI =====
+        // DESKRIPSI (Menggunakan JTextArea + JScrollPane)
         c.gridx = 0; c.gridy = 3;
-        JLabel lblDesk = new JLabel("Deskripsi :");
+        c.anchor = GridBagConstraints.EAST;
+        JLabel lblDesk = new JLabel("Deskripsi :", SwingConstants.RIGHT);
         lblDesk.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         lblDesk.setForeground(new Color(200, 200, 230));
+        lblDesk.setPreferredSize(new Dimension(120, 32));
         mainPanel.add(lblDesk, c);
 
-        txt_deskripsi = new JTextField(20);
+        txt_deskripsi = new JTextArea();
         txt_deskripsi.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         txt_deskripsi.setBackground(Color.WHITE);
         txt_deskripsi.setForeground(Color.BLACK);
-        txt_deskripsi.setPreferredSize(new Dimension(350, 32));
-        c.gridx = 1; c.gridy = 3;
-        c.gridwidth = 3;
-        mainPanel.add(txt_deskripsi, c);
-        c.gridwidth = 1;
+        txt_deskripsi.setLineWrap(true);
+        txt_deskripsi.setWrapStyleWord(true);
+        txt_deskripsi.setBorder(BorderFactory.createEmptyBorder(4, 6, 4, 6));
 
-        // ===== BUTTON ROW 1 =====
+        scrollDeskripsi = new JScrollPane(txt_deskripsi);
+        scrollDeskripsi.setPreferredSize(new Dimension(350, 70)); // Tinggi disesuaikan untuk beberapa baris teks
+        c.gridx = 1; c.gridy = 3;
+        c.anchor = GridBagConstraints.WEST;
+        mainPanel.add(scrollDeskripsi, c);
+
+        // BUTTON ROW 1
         btn_submit = new JButton("SUBMIT");
         btn_submit.setFont(new Font("Segoe UI", Font.BOLD, 14));
         btn_submit.setBackground(new Color(46, 204, 113));
         btn_submit.setForeground(Color.WHITE);
         btn_submit.setFocusPainted(false);
         btn_submit.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btn_submit.setPreferredSize(new Dimension(120, 38));
+        btn_submit.setPreferredSize(new Dimension(110, 38));
 
         btn_update = new JButton("UPDATE");
         btn_update.setFont(new Font("Segoe UI", Font.BOLD, 14));
@@ -328,7 +341,7 @@ public class kategori extends javax.swing.JFrame {
         btn_update.setForeground(Color.WHITE);
         btn_update.setFocusPainted(false);
         btn_update.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btn_update.setPreferredSize(new Dimension(120, 38));
+        btn_update.setPreferredSize(new Dimension(110, 38));
 
         btn_delete = new JButton("DELETE");
         btn_delete.setFont(new Font("Segoe UI", Font.BOLD, 14));
@@ -336,27 +349,28 @@ public class kategori extends javax.swing.JFrame {
         btn_delete.setForeground(Color.WHITE);
         btn_delete.setFocusPainted(false);
         btn_delete.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btn_delete.setPreferredSize(new Dimension(120, 38));
+        btn_delete.setPreferredSize(new Dimension(110, 38));
 
-        JPanel btnPanel1 = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 5));
+        JPanel btnPanel1 = new JPanel(new FlowLayout(FlowLayout.CENTER, 12, 0));
         btnPanel1.setBackground(new Color(10, 10, 30));
         btnPanel1.add(btn_submit);
         btnPanel1.add(btn_update);
         btnPanel1.add(btn_delete);
 
         c.gridx = 0; c.gridy = 4;
-        c.gridwidth = 4;
+        c.gridwidth = 2;
+        c.anchor = GridBagConstraints.CENTER;
+        c.insets = new Insets(15, 10, 5, 10); // Menambahkan margin top pada baris tombol pertama
         mainPanel.add(btnPanel1, c);
-        c.gridwidth = 1;
 
-        // ===== BUTTON ROW 2 =====
+        // BUTTON ROW 2
         btn_cancel = new JButton("CANCEL");
         btn_cancel.setFont(new Font("Segoe UI", Font.BOLD, 14));
         btn_cancel.setBackground(new Color(241, 196, 15));
         btn_cancel.setForeground(Color.BLACK);
         btn_cancel.setFocusPainted(false);
         btn_cancel.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btn_cancel.setPreferredSize(new Dimension(120, 38));
+        btn_cancel.setPreferredSize(new Dimension(110, 38));
 
         btn_refresh = new JButton("REFRESH");
         btn_refresh.setFont(new Font("Segoe UI", Font.BOLD, 14));
@@ -364,28 +378,28 @@ public class kategori extends javax.swing.JFrame {
         btn_refresh.setForeground(Color.WHITE);
         btn_refresh.setFocusPainted(false);
         btn_refresh.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btn_refresh.setPreferredSize(new Dimension(120, 38));
+        btn_refresh.setPreferredSize(new Dimension(110, 38));
 
-        btn_back = new JButton("🔙 KEMBALI");
+        btn_back = new JButton("KEMBALI"); // Diubah karakter panahnya agar tidak memicu glyph error []
         btn_back.setFont(new Font("Segoe UI", Font.BOLD, 14));
         btn_back.setBackground(new Color(155, 89, 182));
         btn_back.setForeground(Color.WHITE);
         btn_back.setFocusPainted(false);
         btn_back.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btn_back.setPreferredSize(new Dimension(140, 38));
+        btn_back.setPreferredSize(new Dimension(130, 38));
 
-        JPanel btnPanel2 = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 5));
+        JPanel btnPanel2 = new JPanel(new FlowLayout(FlowLayout.CENTER, 12, 0));
         btnPanel2.setBackground(new Color(10, 10, 30));
         btnPanel2.add(btn_cancel);
         btnPanel2.add(btn_refresh);
         btnPanel2.add(btn_back);
 
         c.gridx = 0; c.gridy = 5;
-        c.gridwidth = 4;
+        c.gridwidth = 2;
+        c.insets = new Insets(5, 10, 15, 10);
         mainPanel.add(btnPanel2, c);
-        c.gridwidth = 1;
 
-        // ===== TABLE =====
+        // TABLE
         tabel_kategori = new JTable();
         tabel_kategori.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         tabel_kategori.setRowHeight(30);
@@ -404,14 +418,15 @@ public class kategori extends javax.swing.JFrame {
         jScrollPane1.setBorder(BorderFactory.createLineBorder(new Color(60, 60, 120), 1));
 
         c.gridx = 0; c.gridy = 6;
-        c.gridwidth = 4;
+        c.gridwidth = 2;
         c.fill = GridBagConstraints.BOTH;
         c.weightx = 1.0;
         c.weighty = 1.0;
-        jScrollPane1.setPreferredSize(new Dimension(700, 200));
+        c.insets = new Insets(5, 10, 10, 10);
+        jScrollPane1.setPreferredSize(new Dimension(720, 180));
         mainPanel.add(jScrollPane1, c);
 
-        // ===== EVENT LISTENERS =====
+        // EVENT LISTENERS
         btn_submit.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) { btn_submitMouseClicked(evt); }
         });
@@ -434,7 +449,7 @@ public class kategori extends javax.swing.JFrame {
             public void mouseClicked(java.awt.event.MouseEvent evt) { tabel_kategoriMouseClicked(evt); }
         });
 
-        // ===== ROOT PANEL =====
+        // ROOT PANEL
         JPanel rootPanel = new JPanel(new BorderLayout());
         rootPanel.setBackground(new Color(15, 15, 35));
         rootPanel.add(titleBar, BorderLayout.NORTH);
