@@ -197,7 +197,7 @@ public class register extends javax.swing.JFrame {
                 label_foto.setFont(new Font("Segoe UI", Font.PLAIN, 12));
             } catch (Exception e) {
                 label_foto.setIcon(null);
-                label_foto.setText("📷");
+                label_foto.setText("");
             }
         }
     }
