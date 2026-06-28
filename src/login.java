@@ -1,7 +1,7 @@
 import java.sql.*;
 import javax.swing.*;
-import java.awt.*;           // ← TAMBAHKAN INI!
-import java.awt.event.*;     // ← TAMBAHKAN INI (untuk MouseAdapter)
+import java.awt.*;
+import java.awt.event.*;
 
 
 public class login extends javax.swing.JFrame {

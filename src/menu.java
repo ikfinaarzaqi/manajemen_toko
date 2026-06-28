@@ -2,6 +2,8 @@ import java.awt.*;
 import java.sql.*;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import java.io.File;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 public class menu extends javax.swing.JFrame {
 
@@ -27,6 +29,113 @@ public class menu extends javax.swing.JFrame {
         autonumber();
         txt_id.setEnabled(false);
         kosongkan_form();
+
+        // Setup foto profil click listener
+        setupFotoProfil();
+    }
+
+    // ===== SETUP FOTO PROFIL =====
+    private void setupFotoProfil() {
+        // Buat label_foto bisa diklik
+        label_foto.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        label_foto.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                uploadFoto();
+            }
+        });
+
+        // Buat label "Tambah/Ganti Foto" dibawah foto
+        lbl_ubah_foto.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        lbl_ubah_foto.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                uploadFoto();
+            }
+        });
+    }
+
+    // ===== UPLOAD FOTO =====
+    private void uploadFoto() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Pilih Foto Profil");
+        fileChooser.setFileFilter(new FileNameExtensionFilter("Image files", "jpg", "jpeg", "png", "gif", "bmp"));
+
+        int result = fileChooser.showOpenDialog(this);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            File selectedFile = fileChooser.getSelectedFile();
+            String fotoPath = selectedFile.getAbsolutePath();
+
+            // Validasi ukuran file (max 2MB)
+            if (selectedFile.length() > 2 * 1024 * 1024) {
+                JOptionPane.showMessageDialog(this,
+                        "Ukuran file terlalu besar! Maksimal 2MB.",
+                        "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            try {
+                if (con == null) con = MyConnection.getConnection();
+                pst = con.prepareStatement("UPDATE register SET foto = ? WHERE username = ?");
+                pst.setString(1, fotoPath);
+                pst.setString(2, username);
+                if (pst.executeUpdate() > 0) {
+                    JOptionPane.showMessageDialog(this,
+                            "✅ Foto profil berhasil diupdate!",
+                            "Sukses", JOptionPane.INFORMATION_MESSAGE);
+                    loadImage(username); // Refresh foto
+                }
+                pst.close();
+            } catch (SQLException ex) {
+                JOptionPane.showMessageDialog(this,
+                        "Error database: " + ex.getMessage(),
+                        "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    // ===== LOAD IMAGE (DENGAN DEFAULT) =====
+    private void loadImage(String username) {
+        try {
+            if (con == null) con = MyConnection.getConnection();
+            pst = con.prepareStatement("SELECT foto FROM register WHERE username = ?");
+            pst.setString(1, username);
+            rs = pst.executeQuery();
+            if (rs.next()) {
+                String fotoPath = rs.getString("foto");
+                if (fotoPath != null && !fotoPath.isEmpty()) {
+                    File file = new File(fotoPath);
+                    if (file.exists()) {
+                        ImageIcon icon = new ImageIcon(fotoPath);
+                        Image img = icon.getImage().getScaledInstance(100, 100, Image.SCALE_SMOOTH);
+                        label_foto.setIcon(new ImageIcon(img));
+                        label_foto.setText("");
+                        label_foto.setHorizontalAlignment(SwingConstants.CENTER);
+                        lbl_ubah_foto.setText("Ganti Foto");
+                        lbl_ubah_foto.setForeground(new Color(100, 200, 100));
+                        return;
+                    }
+                }
+            }
+            rs.close();
+            pst.close();
+        } catch (SQLException e) {
+            System.out.println("Error load image: " + e.getMessage());
+        }
+
+        // Jika tidak ada foto, tampilkan default
+        setDefaultPhoto();
+    }
+
+    // ===== SET DEFAULT PHOTO =====
+    private void setDefaultPhoto() {
+        label_foto.setIcon(null);
+        label_foto.setText("📷");
+        label_foto.setFont(new Font("Segoe UI", Font.PLAIN, 45));
+        label_foto.setForeground(Color.WHITE);
+        label_foto.setHorizontalAlignment(SwingConstants.CENTER);
+        lbl_ubah_foto.setText("📷 Tambah Foto");
+        lbl_ubah_foto.setForeground(new Color(100, 150, 255));
     }
 
     private void kosongkan_form() {
@@ -133,29 +242,6 @@ public class menu extends javax.swing.JFrame {
             pst.close();
         } catch (SQLException e) {
             user.setText("Admin");
-        }
-    }
-
-    private void loadImage(String username) {
-        try {
-            if (con == null) con = MyConnection.getConnection();
-            pst = con.prepareStatement("SELECT foto FROM register WHERE username = ?");
-            pst.setString(1, username);
-            rs = pst.executeQuery();
-            if (rs.next()) {
-                String fotoPath = rs.getString("foto");
-                if (fotoPath != null && !fotoPath.isEmpty()) {
-                    ImageIcon icon = new ImageIcon(fotoPath);
-                    Image img = icon.getImage().getScaledInstance(80, 80, Image.SCALE_SMOOTH);
-                    label_foto.setIcon(new ImageIcon(img));
-                    label_foto.setText("");
-                    label_foto.setBorder(null);
-                }
-            }
-            rs.close();
-            pst.close();
-        } catch (SQLException e) {
-            System.out.println("Error load image: " + e.getMessage());
         }
     }
 
@@ -361,7 +447,7 @@ public class menu extends javax.swing.JFrame {
     private javax.swing.JComboBox<String> jc_kategori;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JTable tabel_produk;
-    private javax.swing.JLabel label_foto, user;
+    private javax.swing.JLabel label_foto, user, lbl_ubah_foto; // TAMBAHKAN lbl_ubah_foto
     private javax.swing.JTextField txt_deskripsi, txt_harga, txt_id, txt_nama, txt_stok;
 
     // ========== INIT COMPONENTS (MODERN UI + TITLE BAR KUSTOM) ==========
@@ -426,27 +512,43 @@ public class menu extends javax.swing.JFrame {
         sc.gridy = 1;
         sidebar.add(title, sc);
 
+        // ===== FOTO PROFIL =====
         label_foto = new JLabel();
         label_foto.setPreferredSize(new Dimension(100, 100));
+        label_foto.setMinimumSize(new Dimension(100, 100));
+        label_foto.setMaximumSize(new Dimension(100, 100));
         label_foto.setOpaque(true);
         label_foto.setBackground(new Color(40, 40, 80));
         label_foto.setBorder(BorderFactory.createLineBorder(new Color(100, 100, 200), 2));
         label_foto.setHorizontalAlignment(SwingConstants.CENTER);
-        label_foto.setText("");
+        label_foto.setVerticalAlignment(SwingConstants.CENTER);
+        label_foto.setText("📷");
         label_foto.setFont(new Font("Segoe UI", Font.PLAIN, 40));
         label_foto.setForeground(Color.WHITE);
+        label_foto.setCursor(new Cursor(Cursor.HAND_CURSOR));
         sc.gridy = 2;
         sidebar.add(label_foto, sc);
 
+        // ===== LABEL UBAH FOTO =====
+        lbl_ubah_foto = new JLabel("📷 Tambah Foto");
+        lbl_ubah_foto.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        lbl_ubah_foto.setForeground(new Color(100, 150, 255));
+        lbl_ubah_foto.setHorizontalAlignment(SwingConstants.CENTER);
+        lbl_ubah_foto.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        sc.gridy = 3;
+        sidebar.add(lbl_ubah_foto, sc);
+
+        // ===== USER NAME =====
         user = new JLabel("Admin");
         user.setFont(new Font("Segoe UI", Font.BOLD, 14));
         user.setForeground(Color.WHITE);
-        sc.gridy = 3;
+        user.setHorizontalAlignment(SwingConstants.CENTER);
+        sc.gridy = 4;
         sidebar.add(user, sc);
 
         JSeparator sep = new JSeparator();
         sep.setForeground(new Color(80, 80, 140));
-        sc.gridy = 4;
+        sc.gridy = 5;
         sc.fill = GridBagConstraints.HORIZONTAL;
         sc.weightx = 1.0;
         sidebar.add(sep, sc);
@@ -464,7 +566,7 @@ public class menu extends javax.swing.JFrame {
             sideButtons[i].setBorderPainted(false);
             sideButtons[i].setCursor(new Cursor(Cursor.HAND_CURSOR));
             sideButtons[i].setPreferredSize(new Dimension(170, 40));
-            sc.gridy = 5 + i;
+            sc.gridy = 6 + i;
             sidebar.add(sideButtons[i], sc);
         }
 
