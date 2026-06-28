@@ -5,38 +5,62 @@ import javax.swing.table.DefaultTableModel;
 import java.io.File;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
+/**
+ * CLASS MENU - Halaman utama setelah login
+ * Menampilkan daftar produk dengan CRUD (Create, Read, Update, Delete)
+ * Juga menampilkan profil user di sidebar
+ */
 public class menu extends javax.swing.JFrame {
 
-    private Connection con;
-    private Statement st;
-    private PreparedStatement pst;
-    private ResultSet rs;
-    private DefaultTableModel model;
-    private String username;
+    // ===== VARIABEL DATABASE =====
+    private Connection con;          // Koneksi ke database
+    private Statement st;            // Untuk menjalankan query SQL
+    private PreparedStatement pst;   // Untuk query dengan parameter
+    private ResultSet rs;            // Untuk menyimpan hasil query
+    private DefaultTableModel model; // Model untuk tabel di GUI
+    private String username;         // Username yang login
 
+    // ===== VARIABEL GUI =====
+    private javax.swing.JButton btn_add, btn_clear, btn_delete, btn_exit, btn_kategori, btn_logout, btn_update;
+    private javax.swing.JComboBox<String> jc_kategori;
+    private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JTable tabel_produk;
+    private javax.swing.JLabel label_foto, user, lbl_ubah_foto;
+    private javax.swing.JTextField txt_deskripsi, txt_harga, txt_id, txt_nama, txt_stok;
+
+    /**
+     * KONSTRUKTOR - Dipanggil saat objek menu dibuat
+     * Inisialisasi komponen GUI, koneksi database, dan load data
+     */
     public menu() {
-        initComponents();
-        this.setLocationRelativeTo(null);
+        initComponents();                    // Membuat dan mengatur semua komponen GUI
+        this.setLocationRelativeTo(null);     // Posisi window di tengah layar
         this.setTitle("Welcome - Main Menu");
 
-        con = MyConnection.getConnection();
-        username = login.txt;
+        con = MyConnection.getConnection();   // Membuka koneksi database
+        username = login.txt;                 // Ambil username dari halaman login
 
-        loadData();
-        loadImage(username);
-        showUserInfo(username);
-        loadComboBox();
-        autonumber();
-        txt_id.setEnabled(false);
-        kosongkan_form();
+        // Load semua data
+        loadData();           // Load data produk ke tabel
+        loadImage(username);  // Load foto profil user
+        showUserInfo(username); // Tampilkan nama user
+        loadComboBox();       // Load data kategori ke combobox
+        autonumber();         // Generate ID produk otomatis
+        txt_id.setEnabled(false); // ID produk tidak bisa diedit manual
+        kosongkan_form();     // Reset form input
 
-        // Setup foto profil click listener
-        setupFotoProfil();
+        setupFotoProfil();    // Setup listener untuk upload foto
     }
 
-    // ===== SETUP FOTO PROFIL =====
+    // ================================================================
+    // ===== BAGIAN 1: MANAJEMEN FOTO PROFIL =====
+    // ================================================================
+
+    /**
+     * SETUP FOTO PROFIL - Membuat label foto bisa diklik untuk upload
+     */
     private void setupFotoProfil() {
-        // Buat label_foto bisa diklik
+        // Event klik pada foto
         label_foto.setCursor(new Cursor(Cursor.HAND_CURSOR));
         label_foto.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
@@ -45,7 +69,7 @@ public class menu extends javax.swing.JFrame {
             }
         });
 
-        // Buat label "Tambah/Ganti Foto" dibawah foto
+        // Event klik pada label "Tambah/Ganti Foto"
         lbl_ubah_foto.setCursor(new Cursor(Cursor.HAND_CURSOR));
         lbl_ubah_foto.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
@@ -55,10 +79,13 @@ public class menu extends javax.swing.JFrame {
         });
     }
 
-    // ===== UPLOAD FOTO =====
+    /**
+     * UPLOAD FOTO - Membuka dialog untuk memilih dan mengupload foto profil
+     */
     private void uploadFoto() {
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setDialogTitle("Pilih Foto Profil");
+        // Filter hanya file gambar
         fileChooser.setFileFilter(new FileNameExtensionFilter("Image files", "jpg", "jpeg", "png", "gif", "bmp"));
 
         int result = fileChooser.showOpenDialog(this);
@@ -66,7 +93,7 @@ public class menu extends javax.swing.JFrame {
             File selectedFile = fileChooser.getSelectedFile();
             String fotoPath = selectedFile.getAbsolutePath();
 
-            // Validasi ukuran file (max 2MB)
+            // Validasi ukuran file maksimal 2MB
             if (selectedFile.length() > 2 * 1024 * 1024) {
                 JOptionPane.showMessageDialog(this,
                         "Ukuran file terlalu besar! Maksimal 2MB.",
@@ -74,6 +101,7 @@ public class menu extends javax.swing.JFrame {
                 return;
             }
 
+            // Update path foto di database
             try {
                 if (con == null) con = MyConnection.getConnection();
                 pst = con.prepareStatement("UPDATE register SET foto = ? WHERE username = ?");
@@ -83,7 +111,7 @@ public class menu extends javax.swing.JFrame {
                     JOptionPane.showMessageDialog(this,
                             "✅ Foto profil berhasil diupdate!",
                             "Sukses", JOptionPane.INFORMATION_MESSAGE);
-                    loadImage(username); // Refresh foto
+                    loadImage(username); // Refresh tampilan foto
                 }
                 pst.close();
             } catch (SQLException ex) {
@@ -94,7 +122,10 @@ public class menu extends javax.swing.JFrame {
         }
     }
 
-    // ===== LOAD IMAGE (DENGAN DEFAULT) =====
+    /**
+     * LOAD IMAGE - Memuat foto profil dari database
+     * Jika ada foto, tampilkan; jika tidak, tampilkan default
+     */
     private void loadImage(String username) {
         try {
             if (con == null) con = MyConnection.getConnection();
@@ -106,8 +137,9 @@ public class menu extends javax.swing.JFrame {
                 if (fotoPath != null && !fotoPath.isEmpty()) {
                     File file = new File(fotoPath);
                     if (file.exists()) {
+                        // Resize gambar agar sesuai dengan label (80x80)
                         ImageIcon icon = new ImageIcon(fotoPath);
-                        Image img = icon.getImage().getScaledInstance(100, 100, Image.SCALE_SMOOTH);
+                        Image img = icon.getImage().getScaledInstance(80, 80, Image.SCALE_SMOOTH);
                         label_foto.setIcon(new ImageIcon(img));
                         label_foto.setText("");
                         label_foto.setHorizontalAlignment(SwingConstants.CENTER);
@@ -122,22 +154,29 @@ public class menu extends javax.swing.JFrame {
         } catch (SQLException e) {
             System.out.println("Error load image: " + e.getMessage());
         }
-
-        // Jika tidak ada foto, tampilkan default
-        setDefaultPhoto();
+        setDefaultPhoto(); // Jika tidak ada foto, tampilkan default
     }
 
-    // ===== SET DEFAULT PHOTO =====
+    /**
+     * SET DEFAULT PHOTO - Tampilan default jika belum ada foto
+     */
     private void setDefaultPhoto() {
         label_foto.setIcon(null);
-        label_foto.setText("📷");
-        label_foto.setFont(new Font("Segoe UI", Font.PLAIN, 45));
+        label_foto.setText("");
+        label_foto.setFont(new Font("Segoe UI", Font.PLAIN, 35));
         label_foto.setForeground(Color.WHITE);
         label_foto.setHorizontalAlignment(SwingConstants.CENTER);
-        lbl_ubah_foto.setText("📷 Tambah Foto");
+        lbl_ubah_foto.setText("Tambah Foto");
         lbl_ubah_foto.setForeground(new Color(100, 150, 255));
     }
 
+    // ================================================================
+    // ===== BAGIAN 2: MANAJEMEN FORM PRODUK =====
+    // ================================================================
+
+    /**
+     * KOSONGKAN FORM - Mereset semua field input ke keadaan kosong
+     */
     private void kosongkan_form() {
         txt_nama.setText("");
         txt_harga.setText("");
@@ -146,9 +185,12 @@ public class menu extends javax.swing.JFrame {
         txt_id.setText("");
         jc_kategori.setSelectedIndex(0);
         txt_id.requestFocus();
-        autonumber();
+        autonumber(); // Generate ID baru
     }
 
+    /**
+     * AUTONUMBER - Generate ID produk otomatis dengan format P001, P002, dst.
+     */
     private void autonumber() {
         try {
             if (con == null) con = MyConnection.getConnection();
@@ -173,9 +215,18 @@ public class menu extends javax.swing.JFrame {
         }
     }
 
+    // ================================================================
+    // ===== BAGIAN 3: LOAD DATA DARI DATABASE =====
+    // ================================================================
+
+    /**
+     * LOAD DATA - Mengambil semua data produk dari database dan menampilkan di tabel
+     * Menggunakan INNER JOIN untuk mengambil nama kategori dari tabel kategori
+     */
     public void loadData() {
         try {
             if (con == null) con = MyConnection.getConnection();
+            // Query SQL dengan JOIN untuk mendapatkan nama kategori
             String sql = "SELECT produk.id_produk, produk.nama_produk, produk.harga, produk.stok, produk.deskripsi, kategori.nama_kategori "
                     + "FROM produk "
                     + "INNER JOIN kategori ON produk.id_kategori = kategori.id_kategori "
@@ -183,6 +234,7 @@ public class menu extends javax.swing.JFrame {
             pst = con.prepareStatement(sql);
             rs = pst.executeQuery();
 
+            // Membuat model tabel dengan 6 kolom
             model = new DefaultTableModel();
             model.addColumn("ID Produk");
             model.addColumn("Nama Produk");
@@ -191,6 +243,7 @@ public class menu extends javax.swing.JFrame {
             model.addColumn("Deskripsi");
             model.addColumn("Kategori");
 
+            // Mengisi data ke model tabel
             while (rs.next()) {
                 Object[] row = new Object[6];
                 row[0] = rs.getString("id_produk");
@@ -202,6 +255,7 @@ public class menu extends javax.swing.JFrame {
                 model.addRow(row);
             }
 
+            // Set model ke tabel dan atur lebar kolom
             tabel_produk.setModel(model);
             tabel_produk.getColumnModel().getColumn(0).setPreferredWidth(80);
             tabel_produk.getColumnModel().getColumn(1).setPreferredWidth(200);
@@ -217,18 +271,26 @@ public class menu extends javax.swing.JFrame {
         }
     }
 
+    /**
+     * LOAD COMBOBOX - Mengisi combobox kategori dengan data dari database
+     */
     private void loadComboBox() {
         try {
             if (con == null) con = MyConnection.getConnection();
             jc_kategori.removeAllItems();
             rs = con.createStatement().executeQuery("SELECT nama_kategori FROM kategori ORDER BY nama_kategori ASC");
-            while (rs.next()) jc_kategori.addItem(rs.getString("nama_kategori"));
+            while (rs.next()) {
+                jc_kategori.addItem(rs.getString("nama_kategori"));
+            }
             rs.close();
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(null, "Gagal memuat kategori!", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
+    /**
+     * SHOW USER INFO - Menampilkan nama user di sidebar
+     */
     private void showUserInfo(String username) {
         try {
             if (con == null) con = MyConnection.getConnection();
@@ -245,6 +307,15 @@ public class menu extends javax.swing.JFrame {
         }
     }
 
+    // ================================================================
+    // ===== BAGIAN 4: HELPER DATABASE =====
+    // ================================================================
+
+    /**
+     * GET ID KATEGORI - Mencari id_kategori berdasarkan nama kategori
+     * @param namaKategori Nama kategori yang dicari
+     * @return id_kategori dalam bentuk String
+     */
     private String getIdKategori(String namaKategori) {
         try {
             if (con == null) con = MyConnection.getConnection();
@@ -258,6 +329,11 @@ public class menu extends javax.swing.JFrame {
         return "";
     }
 
+    /**
+     * IS ID EXISTS - Mengecek apakah ID produk sudah terdaftar di database
+     * @param id ID produk yang dicek
+     * @return true jika sudah ada, false jika belum
+     */
     private boolean isIdExists(String id) {
         try {
             if (con == null) con = MyConnection.getConnection();
@@ -271,7 +347,14 @@ public class menu extends javax.swing.JFrame {
         return false;
     }
 
-    // ========== EVENT ==========
+    // ================================================================
+    // ===== BAGIAN 5: EVENT CRUD (CREATE, READ, UPDATE, DELETE) =====
+    // ================================================================
+
+    /**
+     * BTN ADD - Menambahkan produk baru ke database
+     * Validasi: semua field harus diisi, harga dan stok harus angka
+     */
     private void btn_addMouseClicked(java.awt.event.MouseEvent evt) {
         String id = txt_id.getText().trim();
         String nama = txt_nama.getText().trim();
@@ -280,24 +363,36 @@ public class menu extends javax.swing.JFrame {
         String deskripsi = txt_deskripsi.getText().trim();
         String kategori = jc_kategori.getSelectedItem().toString();
 
+        // Validasi: semua field harus diisi
         if (nama.isEmpty() || harga.isEmpty() || stok.isEmpty() || deskripsi.isEmpty()) {
             JOptionPane.showMessageDialog(null, "Semua field harus diisi!", "Peringatan", JOptionPane.WARNING_MESSAGE);
             return;
         }
-        try { Integer.parseInt(harga); Integer.parseInt(stok); } catch (NumberFormatException e) {
+
+        // Validasi: harga dan stok harus angka
+        try {
+            Integer.parseInt(harga);
+            Integer.parseInt(stok);
+        } catch (NumberFormatException e) {
             JOptionPane.showMessageDialog(null, "Harga dan Stok harus angka!", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
+
+        // Validasi: ID tidak boleh duplikat
         if (isIdExists(id)) {
             JOptionPane.showMessageDialog(null, "ID Produk sudah terdaftar!", "Error", JOptionPane.ERROR_MESSAGE);
             autonumber();
             return;
         }
+
+        // Dapatkan id_kategori dari nama kategori yang dipilih
         String idKategori = getIdKategori(kategori);
         if (idKategori.isEmpty()) {
             JOptionPane.showMessageDialog(null, "Kategori tidak ditemukan!", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
+
+        // Insert ke database
         try {
             if (con == null) con = MyConnection.getConnection();
             pst = con.prepareStatement("INSERT INTO produk VALUES (?, ?, ?, ?, ?, ?)");
@@ -309,8 +404,8 @@ public class menu extends javax.swing.JFrame {
             pst.setString(6, idKategori);
             if (pst.executeUpdate() > 0) {
                 JOptionPane.showMessageDialog(null, "Data produk berhasil ditambahkan!", "Sukses", JOptionPane.INFORMATION_MESSAGE);
-                loadData();
-                kosongkan_form();
+                loadData();      // Refresh tabel
+                kosongkan_form(); // Reset form
             }
             pst.close();
         } catch (SQLException e) {
@@ -318,6 +413,10 @@ public class menu extends javax.swing.JFrame {
         }
     }
 
+    /**
+     * BTN UPDATE - Mengupdate data produk yang sudah dipilih
+     * Data diambil dari form yang sudah terisi (klik tabel)
+     */
     private void btn_updateMouseClicked(java.awt.event.MouseEvent evt) {
         String id = txt_id.getText().trim();
         String nama = txt_nama.getText().trim();
@@ -326,23 +425,34 @@ public class menu extends javax.swing.JFrame {
         String deskripsi = txt_deskripsi.getText().trim();
         String kategori = jc_kategori.getSelectedItem().toString();
 
+        // Validasi: harus pilih data dulu
         if (id.isEmpty()) {
             JOptionPane.showMessageDialog(null, "Pilih data yang akan diupdate!", "Peringatan", JOptionPane.WARNING_MESSAGE);
             return;
         }
+
+        // Validasi: semua field harus diisi
         if (nama.isEmpty() || harga.isEmpty() || stok.isEmpty() || deskripsi.isEmpty()) {
             JOptionPane.showMessageDialog(null, "Semua field harus diisi!", "Peringatan", JOptionPane.WARNING_MESSAGE);
             return;
         }
-        try { Integer.parseInt(harga); Integer.parseInt(stok); } catch (NumberFormatException e) {
+
+        // Validasi: harga dan stok harus angka
+        try {
+            Integer.parseInt(harga);
+            Integer.parseInt(stok);
+        } catch (NumberFormatException e) {
             JOptionPane.showMessageDialog(null, "Harga dan Stok harus angka!", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
+
         String idKategori = getIdKategori(kategori);
         if (idKategori.isEmpty()) {
             JOptionPane.showMessageDialog(null, "Kategori tidak ditemukan!", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
+
+        // Update database
         try {
             if (con == null) con = MyConnection.getConnection();
             pst = con.prepareStatement("UPDATE produk SET nama_produk = ?, harga = ?, stok = ?, deskripsi = ?, id_kategori = ? WHERE id_produk = ?");
@@ -365,12 +475,18 @@ public class menu extends javax.swing.JFrame {
         }
     }
 
+    /**
+     * BTN DELETE - Menghapus produk dari database
+     * Ada konfirmasi sebelum menghapus
+     */
     private void btn_deleteMouseClicked(java.awt.event.MouseEvent evt) {
         String id = txt_id.getText().trim();
         if (id.isEmpty()) {
             JOptionPane.showMessageDialog(null, "Pilih data yang akan dihapus!", "Peringatan", JOptionPane.WARNING_MESSAGE);
             return;
         }
+
+        // Konfirmasi hapus
         if (JOptionPane.showConfirmDialog(null, "Yakin hapus produk ID: " + id + "?", "Konfirmasi Hapus", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
             try {
                 if (con == null) con = MyConnection.getConnection();
@@ -388,15 +504,51 @@ public class menu extends javax.swing.JFrame {
         }
     }
 
+    /**
+     * BTN CLEAR - Membersihkan form input
+     */
     private void btn_clearMouseClicked(java.awt.event.MouseEvent evt) {
         kosongkan_form();
     }
 
+    // ================================================================
+    // ===== BAGIAN 6: NAVIGASI =====
+    // ================================================================
+
+    /**
+     * BTN KATEGORI - Pindah ke halaman manajemen kategori
+     */
+    private void btn_kategoriMouseClicked(java.awt.event.MouseEvent evt) {
+        this.dispose();        // Tutup halaman ini
+        new kategori().setVisible(true); // Buka halaman kategori
+    }
+
+    /**
+     * BTN LOGOUT - Keluar dari aplikasi ke halaman login
+     */
+    private void btn_logoutMouseClicked(java.awt.event.MouseEvent evt) {
+        if (JOptionPane.showConfirmDialog(null, "Yakin logout?", "Konfirmasi Logout", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+            this.dispose();
+            new login().setVisible(true);
+        }
+    }
+
+    /**
+     * BTN EXIT - Keluar dari aplikasi
+     */
     private void btn_exitMouseClicked(java.awt.event.MouseEvent evt) {
         if (JOptionPane.showConfirmDialog(null, "Yakin keluar?", "Konfirmasi", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION)
             System.exit(0);
     }
 
+    // ================================================================
+    // ===== BAGIAN 7: INTERAKSI TABEL =====
+    // ================================================================
+
+    /**
+     * TABEL PRODUK MOUSE CLICKED - Saat klik baris di tabel
+     * Data akan otomatis masuk ke form untuk diedit/dihapus
+     */
     private void tabel_produkMouseClicked(java.awt.event.MouseEvent evt) {
         int row = tabel_produk.getSelectedRow();
         if (row >= 0) {
@@ -407,14 +559,19 @@ public class menu extends javax.swing.JFrame {
                 pst.setString(1, id);
                 rs = pst.executeQuery();
                 if (rs.next()) {
+                    // Isi form dengan data dari tabel
                     txt_id.setText(rs.getString("id_produk"));
                     txt_nama.setText(rs.getString("nama_produk"));
                     txt_harga.setText(String.valueOf(rs.getInt("harga")));
                     txt_stok.setText(String.valueOf(rs.getInt("stok")));
                     txt_deskripsi.setText(rs.getString("deskripsi"));
+
+                    // Set combobox sesuai dengan kategori produk
                     String idKategori = rs.getString("id_kategori");
                     ResultSet rs2 = con.createStatement().executeQuery("SELECT nama_kategori FROM kategori WHERE id_kategori = '" + idKategori + "'");
-                    if (rs2.next()) jc_kategori.setSelectedItem(rs2.getString("nama_kategori"));
+                    if (rs2.next()) {
+                        jc_kategori.setSelectedItem(rs2.getString("nama_kategori"));
+                    }
                     rs2.close();
                 }
                 rs.close();
@@ -425,55 +582,80 @@ public class menu extends javax.swing.JFrame {
         }
     }
 
-    private void btn_kategoriMouseClicked(java.awt.event.MouseEvent evt) {
-        this.dispose();
-        new kategori().setVisible(true);
-    }
+    // ================================================================
+    // ===== BAGIAN 8: MAIN METHOD =====
+    // ================================================================
 
-    private void btn_logoutMouseClicked(java.awt.event.MouseEvent evt) {
-        if (JOptionPane.showConfirmDialog(null, "Yakin logout?", "Konfirmasi Logout", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
-            this.dispose();
-            new login().setVisible(true);
-        }
-    }
-
-    // ========== MAIN ==========
+    /**
+     * MAIN METHOD - Entry point program
+     * Menjalankan GUI menu di Event Dispatch Thread
+     */
     public static void main(String args[]) {
         java.awt.EventQueue.invokeLater(() -> new menu().setVisible(true));
     }
 
-    // ========== VARIABLES ==========
-    private javax.swing.JButton btn_add, btn_clear, btn_delete, btn_exit, btn_kategori, btn_logout, btn_update;
-    private javax.swing.JComboBox<String> jc_kategori;
-    private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JTable tabel_produk;
-    private javax.swing.JLabel label_foto, user, lbl_ubah_foto; // TAMBAHKAN lbl_ubah_foto
-    private javax.swing.JTextField txt_deskripsi, txt_harga, txt_id, txt_nama, txt_stok;
+    // ================================================================
+    // ===== BAGIAN 9: INISIALISASI KOMPONEN GUI =====
+    // ================================================================
 
-    // ========== INIT COMPONENTS (MODERN UI + TITLE BAR KUSTOM) ==========
+    /**
+     * INIT COMPONENTS - Membuat dan mengatur semua komponen GUI
+     * Ini adalah bagian terbesar yang membuat tampilan aplikasi
+     */
     private void initComponents() {
         // ===== SETUP FRAME =====
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setUndecorated(true);
-        setSize(1100, 750);
+        setUndecorated(true);           // Hilangkan title bar default
+        setSize(1100, 750);              // Ukuran window
+        setMinimumSize(new Dimension(800, 600)); // Ukuran minimal
         setLocationRelativeTo(null);
 
         // ===== TITLE BAR KUSTOM =====
         JPanel titleBar = new JPanel(new BorderLayout());
-        titleBar.setBackground(new Color(15, 15, 35));
-        titleBar.setPreferredSize(new Dimension(1100, 40));
+        titleBar.setBackground(new Color(20, 20, 50));
+        titleBar.setPreferredSize(new Dimension(getWidth(), 40));
 
-        JLabel titleLabel = new JLabel("Main Menu - Aplikasi Toko");
+        // Label judul di kiri
+        JLabel titleLabel = new JLabel("Manajemen Toko");
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
         titleLabel.setForeground(Color.WHITE);
-        titleLabel.setBorder(BorderFactory.createEmptyBorder(5, 15, 5, 0));
+        titleLabel.setBorder(BorderFactory.createEmptyBorder(5, 20, 5, 0));
         titleBar.add(titleLabel, BorderLayout.WEST);
 
-        // ===== TOMBOL CLOSE =====
+        // Tombol kontrol di kanan (Minimize, Maximize, Close)
         JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 5));
-        rightPanel.setBackground(new Color(15, 15, 35));
+        rightPanel.setBackground(new Color(20, 20, 50));
 
-        JButton closeButton = new JButton("✕");
+        // Tombol Minimize
+        JButton minButton = new JButton("─");
+        minButton.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        minButton.setForeground(Color.WHITE);
+        minButton.setBackground(new Color(60, 60, 120));
+        minButton.setFocusPainted(false);
+        minButton.setBorder(BorderFactory.createEmptyBorder(5, 12, 5, 12));
+        minButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        minButton.addActionListener(e -> setState(JFrame.ICONIFIED));
+        rightPanel.add(minButton);
+
+        // Tombol Maximize/Restore
+        JButton maxButton = new JButton("□");
+        maxButton.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        maxButton.setForeground(Color.WHITE);
+        maxButton.setBackground(new Color(60, 60, 120));
+        maxButton.setFocusPainted(false);
+        maxButton.setBorder(BorderFactory.createEmptyBorder(5, 12, 5, 12));
+        maxButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        maxButton.addActionListener(e -> {
+            if (getExtendedState() == JFrame.MAXIMIZED_BOTH) {
+                setExtendedState(JFrame.NORMAL);
+            } else {
+                setExtendedState(JFrame.MAXIMIZED_BOTH);
+            }
+        });
+        rightPanel.add(maxButton);
+
+        // Tombol Close
+        JButton closeButton = new JButton("X");
         closeButton.setFont(new Font("Segoe UI", Font.BOLD, 16));
         closeButton.setForeground(Color.WHITE);
         closeButton.setBackground(new Color(200, 50, 50));
@@ -486,181 +668,294 @@ public class menu extends javax.swing.JFrame {
         titleBar.add(rightPanel, BorderLayout.EAST);
 
         // ===== MAIN PANEL =====
-        JPanel mainPanel = new JPanel(new GridBagLayout());
+        JPanel mainPanel = new JPanel(new BorderLayout());
         mainPanel.setBackground(new Color(15, 15, 35));
-        GridBagConstraints c = new GridBagConstraints();
-        c.insets = new Insets(10, 10, 10, 10);
 
-        // ===== SIDEBAR =====
-        JPanel sidebar = new JPanel(new GridBagLayout());
+        // ============================================================
+        // ===== SIDEBAR (KIRI) =====
+        // ============================================================
+        JPanel sidebar = new JPanel();
+        sidebar.setLayout(new BoxLayout(sidebar, BoxLayout.Y_AXIS));
         sidebar.setBackground(new Color(25, 25, 55));
-        sidebar.setPreferredSize(new Dimension(200, 750));
-        sidebar.setBorder(BorderFactory.createLineBorder(new Color(80, 80, 140), 1));
+        sidebar.setPreferredSize(new Dimension(200, getHeight()));
+        sidebar.setMinimumSize(new Dimension(150, 0));
 
-        GridBagConstraints sc = new GridBagConstraints();
-        sc.insets = new Insets(15, 10, 15, 10);
-        sc.gridx = 0;
+        // ---- HEADER SIDEBAR: "Navigasi" ----
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setBackground(new Color(25, 25, 55));
+        headerPanel.setMaximumSize(new Dimension(200, 45));
+        headerPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 5, 0));
 
-        JLabel logo = new JLabel("");
-        logo.setFont(new Font("Segoe UI", Font.PLAIN, 50));
-        sc.gridy = 0;
-        sidebar.add(logo, sc);
+        JLabel navLabel = new JLabel("Navigasi");
+        navLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        navLabel.setForeground(Color.WHITE);
+        navLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        headerPanel.add(navLabel, BorderLayout.CENTER);
 
-        JLabel title = new JLabel("Main Menu");
-        title.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        title.setForeground(Color.WHITE);
-        sc.gridy = 1;
-        sidebar.add(title, sc);
+        sidebar.add(headerPanel);
 
-        // ===== FOTO PROFIL =====
+        // ---- SEPARATOR (Garis Pemisah) ----
+        sidebar.add(createSeparator());
+
+        // ---- FOTO PROFIL ----
+        JPanel fotoPanel = new JPanel(new GridBagLayout());
+        fotoPanel.setBackground(new Color(25, 25, 55));
+        fotoPanel.setMaximumSize(new Dimension(200, 160));
+        fotoPanel.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
+
+        GridBagConstraints fc = new GridBagConstraints();
+        fc.insets = new Insets(2, 0, 2, 0);
+        fc.gridx = 0;
+
+        // Label foto (tempat menampilkan gambar)
         label_foto = new JLabel();
-        label_foto.setPreferredSize(new Dimension(100, 100));
-        label_foto.setMinimumSize(new Dimension(100, 100));
-        label_foto.setMaximumSize(new Dimension(100, 100));
+        label_foto.setPreferredSize(new Dimension(70, 70));
+        label_foto.setMinimumSize(new Dimension(70, 70));
+        label_foto.setMaximumSize(new Dimension(70, 70));
         label_foto.setOpaque(true);
         label_foto.setBackground(new Color(40, 40, 80));
         label_foto.setBorder(BorderFactory.createLineBorder(new Color(100, 100, 200), 2));
         label_foto.setHorizontalAlignment(SwingConstants.CENTER);
         label_foto.setVerticalAlignment(SwingConstants.CENTER);
-        label_foto.setText("📷");
-        label_foto.setFont(new Font("Segoe UI", Font.PLAIN, 40));
+        label_foto.setText("");
+        label_foto.setFont(new Font("Segoe UI", Font.PLAIN, 28));
         label_foto.setForeground(Color.WHITE);
         label_foto.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        sc.gridy = 2;
-        sidebar.add(label_foto, sc);
+        fc.gridy = 0;
+        fotoPanel.add(label_foto, fc);
 
-        // ===== LABEL UBAH FOTO =====
-        lbl_ubah_foto = new JLabel("📷 Tambah Foto");
-        lbl_ubah_foto.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        // Label "Tambah/Ganti Foto"
+        lbl_ubah_foto = new JLabel("Tambah Foto");
+        lbl_ubah_foto.setFont(new Font("Segoe UI", Font.PLAIN, 9));
         lbl_ubah_foto.setForeground(new Color(100, 150, 255));
         lbl_ubah_foto.setHorizontalAlignment(SwingConstants.CENTER);
         lbl_ubah_foto.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        sc.gridy = 3;
-        sidebar.add(lbl_ubah_foto, sc);
+        fc.gridy = 1;
+        fotoPanel.add(lbl_ubah_foto, fc);
 
-        // ===== USER NAME =====
+        // Label nama user
         user = new JLabel("Admin");
-        user.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        user.setFont(new Font("Segoe UI", Font.BOLD, 12));
         user.setForeground(Color.WHITE);
         user.setHorizontalAlignment(SwingConstants.CENTER);
-        sc.gridy = 4;
-        sidebar.add(user, sc);
+        fc.gridy = 2;
+        fotoPanel.add(user, fc);
 
-        JSeparator sep = new JSeparator();
-        sep.setForeground(new Color(80, 80, 140));
-        sc.gridy = 5;
-        sc.fill = GridBagConstraints.HORIZONTAL;
-        sc.weightx = 1.0;
-        sidebar.add(sep, sc);
-        sc.fill = GridBagConstraints.NONE;
-        sc.weightx = 0;
+        sidebar.add(fotoPanel);
 
-        String[] menuItems = {"Produk", "Kategori", "Logout", "Exit"};
-        JButton[] sideButtons = new JButton[4];
+        // ---- SEPARATOR ----
+        sidebar.add(createSeparator());
+
+        // ---- MENU ITEMS ----
+        String[][] menuItems = {
+                {"Produk", "produk"},
+                {"Kategori", "kategori"},
+                {"", "", "spacer"},
+                {"Logout", "logout"},
+                {"Exit", "exit"}
+        };
+
         for (int i = 0; i < menuItems.length; i++) {
-            sideButtons[i] = new JButton(menuItems[i]);
-            sideButtons[i].setFont(new Font("Segoe UI", Font.PLAIN, 14));
-            sideButtons[i].setForeground(Color.WHITE);
-            sideButtons[i].setBackground(new Color(35, 35, 75));
-            sideButtons[i].setFocusPainted(false);
-            sideButtons[i].setBorderPainted(false);
-            sideButtons[i].setCursor(new Cursor(Cursor.HAND_CURSOR));
-            sideButtons[i].setPreferredSize(new Dimension(170, 40));
-            sc.gridy = 6 + i;
-            sidebar.add(sideButtons[i], sc);
+            if (menuItems[i][0].isEmpty()) {
+                sidebar.add(Box.createRigidArea(new Dimension(0, 3)));
+                continue;
+            }
+
+            // Panel untuk setiap menu
+            JPanel menuPanel = new JPanel(new BorderLayout());
+            menuPanel.setBackground(new Color(25, 25, 55));
+            menuPanel.setMaximumSize(new Dimension(200, 38));
+            menuPanel.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            menuPanel.setBorder(BorderFactory.createEmptyBorder(5, 20, 5, 20));
+
+            // Panel kiri (icon + teks)
+            JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+            leftPanel.setBackground(new Color(25, 25, 55));
+
+            JLabel textLabel = new JLabel(menuItems[i][0]);
+            textLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+            textLabel.setForeground(Color.WHITE);
+
+            leftPanel.add(textLabel);
+            menuPanel.add(leftPanel, BorderLayout.WEST);
+
+            // Arrow di kanan
+            JLabel arrowLabel = new JLabel("›");
+            arrowLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+            arrowLabel.setForeground(new Color(60, 60, 120));
+            menuPanel.add(arrowLabel, BorderLayout.EAST);
+
+            // Hover effect
+            menuPanel.addMouseListener(new java.awt.event.MouseAdapter() {
+                @Override
+                public void mouseEntered(java.awt.event.MouseEvent e) {
+                    menuPanel.setBackground(new Color(45, 45, 85));
+                    leftPanel.setBackground(new Color(45, 45, 85));
+                }
+                @Override
+                public void mouseExited(java.awt.event.MouseEvent e) {
+                    menuPanel.setBackground(new Color(25, 25, 55));
+                    leftPanel.setBackground(new Color(25, 25, 55));
+                }
+            });
+
+            // Action untuk setiap menu
+            String menuName = menuItems[i][1];
+            if (menuName.equals("kategori")) {
+                menuPanel.addMouseListener(new java.awt.event.MouseAdapter() {
+                    @Override
+                    public void mouseClicked(java.awt.event.MouseEvent e) {
+                        btn_kategoriMouseClicked(null);
+                    }
+                });
+            } else if (menuName.equals("logout")) {
+                menuPanel.addMouseListener(new java.awt.event.MouseAdapter() {
+                    @Override
+                    public void mouseClicked(java.awt.event.MouseEvent e) {
+                        btn_logoutMouseClicked(null);
+                    }
+                });
+            } else if (menuName.equals("exit")) {
+                menuPanel.addMouseListener(new java.awt.event.MouseAdapter() {
+                    @Override
+                    public void mouseClicked(java.awt.event.MouseEvent e) {
+                        btn_exitMouseClicked(null);
+                    }
+                });
+            }
+
+            sidebar.add(menuPanel);
         }
 
-        // ===== CONTENT PANEL =====
-        JPanel contentPanel = new JPanel(new GridBagLayout());
+        // Spacer di bagian bawah sidebar (mendorong menu ke atas)
+        sidebar.add(Box.createVerticalGlue());
+
+        // ============================================================
+        // ===== CONTENT PANEL (KANAN) =====
+        // ============================================================
+        JPanel contentPanel = new JPanel(new BorderLayout());
         contentPanel.setBackground(new Color(10, 10, 30));
+        contentPanel.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
+
+        // Wrapper untuk content (agar bisa melebar)
+        JPanel wrapperPanel = new JPanel(new GridBagLayout());
+        wrapperPanel.setBackground(new Color(10, 10, 30));
         GridBagConstraints cc = new GridBagConstraints();
-        cc.insets = new Insets(8, 8, 8, 8);
+        cc.fill = GridBagConstraints.BOTH;
+        cc.weightx = 1.0;
+        cc.weighty = 1.0;
 
+        // ===== FORM PANEL =====
+        JPanel formPanel = new JPanel(new GridBagLayout());
+        formPanel.setBackground(new Color(10, 10, 30));
+        GridBagConstraints fc2 = new GridBagConstraints();
+        fc2.insets = new Insets(3, 5, 3, 5);
+        fc2.fill = GridBagConstraints.HORIZONTAL;
+        fc2.weightx = 1.0;
+
+        // ---- HEADER ----
         JLabel headerTitle = new JLabel("Daftar Data Produk");
-        headerTitle.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        headerTitle.setFont(new Font("Segoe UI", Font.BOLD, 20));
         headerTitle.setForeground(Color.WHITE);
-        cc.gridx = 0;
-        cc.gridy = 0;
-        cc.gridwidth = 3;
-        contentPanel.add(headerTitle, cc);
+        fc2.gridx = 0;
+        fc2.gridy = 0;
+        fc2.gridwidth = 4;
+        fc2.anchor = GridBagConstraints.WEST;
+        formPanel.add(headerTitle, fc2);
+        fc2.anchor = GridBagConstraints.CENTER;
+        fc2.gridwidth = 1;
 
-        cc.gridwidth = 1;
+        // ---- FORM FIELDS ----
+        String[][] fields = {
+                {"ID Produk:", "txt_id"},
+                {"Nama Produk:", "txt_nama"},
+                {"Harga:", "txt_harga"},
+                {"Stok:", "txt_stok"},
+                {"Deskripsi:", "txt_deskripsi"},
+                {"Kategori:", "jc_kategori"}
+        };
 
-        // ID
-        cc.gridx = 0; cc.gridy = 1;
-        contentPanel.add(label("ID Produk:"), cc);
-        txt_id = new JTextField(12);
-        txt_id.setEnabled(false);
-        cc.gridx = 1; cc.gridy = 1;
-        contentPanel.add(textField(txt_id, 12), cc);
+        int y = 1;
+        for (int i = 0; i < fields.length; i++) {
+            // Label
+            fc2.gridx = 0;
+            fc2.gridy = y + i;
+            JLabel lbl = new JLabel(fields[i][0]);
+            lbl.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+            lbl.setForeground(new Color(200, 200, 230));
+            formPanel.add(lbl, fc2);
 
-        // Nama
-        cc.gridx = 0; cc.gridy = 2;
-        contentPanel.add(label("Nama Produk:"), cc);
-        txt_nama = new JTextField(20);
-        cc.gridx = 1; cc.gridy = 2;
-        contentPanel.add(textField(txt_nama, 20), cc);
+            // Field input
+            fc2.gridx = 1;
+            fc2.gridy = y + i;
+            fc2.gridwidth = 3;
+            if (i == 0) {
+                txt_id = new JTextField(12);
+                txt_id.setEnabled(false);
+                formPanel.add(textField(txt_id, 12), fc2);
+            } else if (i == 1) {
+                txt_nama = new JTextField(18);
+                formPanel.add(textField(txt_nama, 18), fc2);
+            } else if (i == 2) {
+                txt_harga = new JTextField(12);
+                formPanel.add(textField(txt_harga, 12), fc2);
+            } else if (i == 3) {
+                txt_stok = new JTextField(12);
+                formPanel.add(textField(txt_stok, 12), fc2);
+            } else if (i == 4) {
+                txt_deskripsi = new JTextField(18);
+                formPanel.add(textField(txt_deskripsi, 18), fc2);
+            } else if (i == 5) {
+                jc_kategori = new JComboBox<>();
+                jc_kategori.setBackground(Color.WHITE);
+                jc_kategori.setForeground(Color.BLACK);
+                jc_kategori.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+                jc_kategori.setPreferredSize(new Dimension(200, 30));
+                formPanel.add(jc_kategori, fc2);
+            }
+            fc2.gridwidth = 1;
+        }
 
-        // Harga
-        cc.gridx = 0; cc.gridy = 3;
-        contentPanel.add(label("Harga:"), cc);
-        txt_harga = new JTextField(10);
-        cc.gridx = 1; cc.gridy = 3;
-        contentPanel.add(textField(txt_harga, 10), cc);
+        // ---- BUTTONS ----
+        y = 1 + fields.length;
+        fc2.gridx = 0;
+        fc2.gridy = y;
+        fc2.gridwidth = 4;
 
-        // Stok
-        cc.gridx = 0; cc.gridy = 4;
-        contentPanel.add(label("Stok:"), cc);
-        txt_stok = new JTextField(10);
-        cc.gridx = 1; cc.gridy = 4;
-        contentPanel.add(textField(txt_stok, 10), cc);
+        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 3));
+        btnPanel.setBackground(new Color(10, 10, 30));
 
-        // Deskripsi
-        cc.gridx = 0; cc.gridy = 5;
-        contentPanel.add(label("Deskripsi:"), cc);
-        txt_deskripsi = new JTextField(20);
-        cc.gridx = 1; cc.gridy = 5;
-        contentPanel.add(textField(txt_deskripsi, 20), cc);
-
-        // Kategori
-        cc.gridx = 0; cc.gridy = 6;
-        contentPanel.add(label("Kategori:"), cc);
-        jc_kategori = new JComboBox<>();
-        jc_kategori.setBackground(Color.WHITE);
-        jc_kategori.setForeground(Color.BLACK);
-        jc_kategori.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        jc_kategori.setPreferredSize(new Dimension(200, 35));
-        cc.gridx = 1; cc.gridy = 6;
-        contentPanel.add(jc_kategori, cc);
-
-        // BUTTONS
         btn_add = button("TAMBAH", new Color(46, 204, 113));
         btn_update = button("UPDATE", new Color(52, 152, 219));
         btn_delete = button("HAPUS", new Color(231, 76, 60));
         btn_clear = button("CLEAR", new Color(241, 196, 15));
 
-        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
-        btnPanel.setBackground(new Color(10, 10, 30));
         btnPanel.add(btn_add);
         btnPanel.add(btn_update);
         btnPanel.add(btn_delete);
         btnPanel.add(btn_clear);
 
-        cc.gridx = 0;
-        cc.gridy = 7;
-        cc.gridwidth = 3;
-        contentPanel.add(btnPanel, cc);
+        formPanel.add(btnPanel, fc2);
 
-        // TABLE
+        // ---- TABLE ----
+        y++;
+        fc2.gridx = 0;
+        fc2.gridy = y;
+        fc2.gridwidth = 4;
+        fc2.fill = GridBagConstraints.BOTH;
+        fc2.weightx = 1.0;
+        fc2.weighty = 1.0;
+        fc2.insets = new Insets(5, 0, 0, 0);
+
         tabel_produk = new JTable();
-        tabel_produk.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        tabel_produk.setRowHeight(30);
+        tabel_produk.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        tabel_produk.setRowHeight(26);
         tabel_produk.setBackground(new Color(25, 25, 55));
         tabel_produk.setForeground(Color.WHITE);
         tabel_produk.setGridColor(new Color(60, 60, 120));
         tabel_produk.setSelectionBackground(new Color(70, 70, 150));
         tabel_produk.setSelectionForeground(Color.WHITE);
-        tabel_produk.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
+        tabel_produk.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
         tabel_produk.getTableHeader().setBackground(new Color(40, 40, 80));
         tabel_produk.getTableHeader().setForeground(Color.WHITE);
         tabel_produk.getTableHeader().setReorderingAllowed(false);
@@ -668,35 +963,30 @@ public class menu extends javax.swing.JFrame {
         jScrollPane1 = new JScrollPane(tabel_produk);
         jScrollPane1.setBackground(new Color(10, 10, 30));
         jScrollPane1.setBorder(BorderFactory.createLineBorder(new Color(60, 60, 120), 1));
-        jScrollPane1.setPreferredSize(new Dimension(800, 250));
 
-        cc.gridx = 0;
-        cc.gridy = 8;
-        cc.gridwidth = 3;
-        cc.fill = GridBagConstraints.BOTH;
-        cc.weightx = 1.0;
-        cc.weighty = 1.0;
-        contentPanel.add(jScrollPane1, cc);
+        formPanel.add(jScrollPane1, fc2);
 
-        // ===== SIDEBAR + CONTENT =====
-        c.gridx = 0; c.gridy = 0;
-        c.weightx = 0.2;
-        c.fill = GridBagConstraints.VERTICAL;
-        mainPanel.add(sidebar, c);
+        // Gabungkan semua ke wrapper
+        wrapperPanel.add(formPanel, cc);
+        contentPanel.add(wrapperPanel, BorderLayout.CENTER);
 
-        c.gridx = 1; c.gridy = 0;
-        c.weightx = 0.8;
-        c.fill = GridBagConstraints.BOTH;
-        c.weighty = 1.0;
-        mainPanel.add(contentPanel, c);
+        // ============================================================
+        // ===== GABUNGKAN SIDEBAR + CONTENT =====
+        // ============================================================
+        mainPanel.add(sidebar, BorderLayout.WEST);
+        mainPanel.add(contentPanel, BorderLayout.CENTER);
 
-        // ===== ROOT PANEL (TITLE BAR + MAIN PANEL) =====
+        // ============================================================
+        // ===== ROOT PANEL =====
+        // ============================================================
         JPanel rootPanel = new JPanel(new BorderLayout());
         rootPanel.setBackground(new Color(15, 15, 35));
         rootPanel.add(titleBar, BorderLayout.NORTH);
         rootPanel.add(mainPanel, BorderLayout.CENTER);
 
+        // ============================================================
         // ===== EVENT LISTENER =====
+        // ============================================================
         btn_add.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) { btn_addMouseClicked(evt); }
         });
@@ -710,43 +1000,60 @@ public class menu extends javax.swing.JFrame {
             public void mouseClicked(java.awt.event.MouseEvent evt) { btn_clearMouseClicked(evt); }
         });
 
-        sideButtons[2].addActionListener(e -> btn_logoutMouseClicked(null));
-        sideButtons[3].addActionListener(e -> btn_exitMouseClicked(null));
-        sideButtons[1].addActionListener(e -> btn_kategoriMouseClicked(null));
-
         tabel_produk.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) { tabel_produkMouseClicked(evt); }
         });
 
+        // ============================================================
+        // ===== TAMPILKAN FRAME =====
+        // ============================================================
         setContentPane(rootPanel);
         setVisible(true);
     }
 
-    // ===== HELPER =====
-    private JLabel label(String text) {
-        JLabel l = new JLabel(text);
-        l.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        l.setForeground(Color.WHITE);
-        return l;
+    // ================================================================
+    // ===== BAGIAN 10: HELPER METHODS =====
+    // ================================================================
+
+    /**
+     * CREATE SEPARATOR - Membuat garis pemisah di sidebar
+     */
+    private JPanel createSeparator() {
+        JPanel sepPanel = new JPanel(new BorderLayout());
+        sepPanel.setBackground(new Color(25, 25, 55));
+        sepPanel.setMaximumSize(new Dimension(200, 8));
+
+        JSeparator sep = new JSeparator();
+        sep.setForeground(new Color(60, 60, 120));
+        sep.setBackground(new Color(60, 60, 120));
+        sepPanel.add(sep, BorderLayout.CENTER);
+
+        return sepPanel;
     }
 
+    /**
+     * TEXT FIELD - Membuat text field dengan style yang konsisten
+     */
     private JTextField textField(JTextField tf, int cols) {
-        tf.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        tf.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         tf.setBackground(Color.WHITE);
         tf.setForeground(Color.BLACK);
-        tf.setPreferredSize(new Dimension(200, 35));
+        tf.setPreferredSize(new Dimension(200, 30));
         return tf;
     }
 
+    /**
+     * BUTTON - Membuat button dengan style yang konsisten
+     */
     private JButton button(String text, Color bg) {
         JButton btn = new JButton(text);
-        btn.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 11));
         btn.setBackground(bg);
         btn.setForeground(Color.WHITE);
         btn.setFocusPainted(false);
-        btn.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+        btn.setBorder(BorderFactory.createEmptyBorder(6, 15, 6, 15));
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btn.setPreferredSize(new Dimension(120, 40));
+        btn.setPreferredSize(new Dimension(100, 32));
         return btn;
     }
 }
